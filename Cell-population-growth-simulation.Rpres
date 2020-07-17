@@ -1,0 +1,103 @@
+Cell population growth simulation
+========================================================
+author: Luis Teran 
+date: July 17, 2020
+autosize: true
+
+Objective
+========================================================
+
+The project repository can be fined in:
+
+<https://github.com/luisteran5296/Cell-population-growth-simulation>.
+
+This is a cell popullation simulator. The main objective is to study population growth given a reproduction and mortality probability.
+
+There's an initial set of individual cells for the simulation  (Initial Population). For every generation, each cell has a fixed probability to reproduce a new individual cell (Reproduction probability %). But also, has a fixed probablity of dying (Mortality probability %)
+
+Process
+========================================================
+
+
+These parameters are the input for graphic user interface.
+```{r}
+initialPop<-100
+generations<-20
+probChild<-0.5
+probDie<-0.8
+```
+
+Then for everu generation the probability is evaluated for each cell. Resulting in a new number of total Population
+```{r, eval=FALSE}
+for(i in 1:(generations-1)){
+  Births[i+1]<-sum(rbinom(n, 1, probChild))
+  Deaths[i+1]<-sum(rbinom(n, 1, probDie))
+  n<-n+Births[i+1]-Deaths[i+1]
+  Population[i+1]<-n
+}
+```
+
+
+
+Slide With Plot
+========================================================
+
+
+The reproduction probability is evaluated first, so a cell can  reproduce and die in the same. The plot shows the evolutiobn through generation:
+- Population (Green Line): Total number of cells
+- Births (Blue Line): Number of births for every generation
+- Deaths (Yellow Line): Number of deaths for every generation
+
+
+Slide With Plot
+========================================================
+
+Finally, the evolution of the growth presented with the input values is displayed.
+```{r, echo=FALSE}
+
+suppressPackageStartupMessages(library(googleVis))
+suppressPackageStartupMessages(library(plotly))
+library(ggplot2)
+library(tidyr)
+
+accumulate_by <- function(dat, var) {
+    var <- lazyeval::f_eval(var, dat)
+    lvls <- plotly:::getLevels(var)
+    dats <- lapply(seq_along(lvls), function(x) {
+        cbind(dat[var %in% lvls[seq(1, x)], ], frame = lvls[[x]])
+    })
+    dplyr::bind_rows(dats)
+}
+
+initialPop<-100
+generations<-20
+probChild<-0.5
+probDie<-0.8
+
+n<-initialPop
+Births<-1:generations
+Deaths<-1:generations
+Population<-1:generations
+
+for(i in 1:(generations-1)){
+  Births[i+1]<-sum(rbinom(n, 1, probChild))
+  Deaths[i+1]<-sum(rbinom(n, 1, probDie))
+  n<-n+Births[i+1]-Deaths[i+1]
+  Population[i+1]<-n
+}
+
+Births[1]<-0
+Deaths[1]<-0
+Population[1]<-initialPop
+Generation<-1:generations
+
+data<-data.frame(Generation, Population, Births, Deaths)
+data3<-data
+data3<-gather(data3, Type, Number, Population:Deaths,factor_key = T)
+data3<-data3 %>% accumulate_by(~Generation)
+
+data3 %>%
+  ggplot( aes(x=Generation, y=Number, group=Type, color=Type)) +
+    geom_line()
+
+```
